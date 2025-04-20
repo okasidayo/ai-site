@@ -3,6 +3,7 @@ import google.generativeai as genai
 from PIL import Image
 from io import BytesIO
 import os
+import base64
 
 # Flaskアプリケーション
 app = Flask(__name__)
@@ -64,8 +65,6 @@ def chat():
                 generation_config={"response_mime_type": "image/png"}
             )
             image_data = response._result.candidates[0].content.parts[0].inline_data.data
-            # 画像をbase64エンコードして返す
-            import base64
             base64_image = base64.b64encode(image_data).decode('utf-8')
             reply = f"data:image/png;base64,{base64_image}"
         except Exception as e:
@@ -91,6 +90,7 @@ def chat():
     switch_api_key()
     return jsonify({"reply": reply[:4000]})
 
-
+# --- ここがRender対応ポイント ---
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # ← PORTをRenderの環境変数から取る！
+    app.run(host="0.0.0.0", port=port)        # ← 0.0.0.0で外部公開！
