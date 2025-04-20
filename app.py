@@ -1,9 +1,8 @@
-# === backend/app.py ===
-
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, send_file
 import google.generativeai as genai
 from PIL import Image
 from io import BytesIO
+import os
 
 # Flaskアプリケーション
 app = Flask(__name__)
@@ -32,7 +31,8 @@ conversation_history = []
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    # html/index.html をそのまま返す
+    return send_file(os.path.join(os.path.dirname(__file__), "index.html"))
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -48,8 +48,8 @@ def chat():
             image_data = uploaded_file.read()
 
             response = vision_model.generate_content([
-                { "mime_type": uploaded_file.mimetype, "data": image_data },
-                { "text": "この画像について日本語で説明してください。" }
+                {"mime_type": uploaded_file.mimetype, "data": image_data},
+                {"text": "この画像について日本語で説明してください。"}
             ])
             reply = response.text if response.text else "⚠ 応答がありませんでした（画像）"
         except Exception as e:
@@ -64,7 +64,7 @@ def chat():
                 generation_config={"response_mime_type": "image/png"}
             )
             image_data = response._result.candidates[0].content.parts[0].inline_data.data
-            # 画像をbase64エンコードして返す（ブラウザで表示できるように）
+            # 画像をbase64エンコードして返す
             import base64
             base64_image = base64.b64encode(image_data).decode('utf-8')
             reply = f"data:image/png;base64,{base64_image}"
