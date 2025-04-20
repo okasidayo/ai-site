@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Geminiとエモいチャット</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+            animation: backgroundMove 20s infinite alternate ease-in-out;
+        }
+
+        @keyframes backgroundMove {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        #chat-container {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            height: 70vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-break: break-word;
+            line-height: 1.5;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .user {
+            align-self: flex-end;
+            background-color: #a5d6a7;
+            color: #2e7d32;
+        }
+
+        .ai {
+            align-self: flex-start;
+            background-color: #ce93d8;
+            color: #6a1b9a;
+        }
+
+        #input-area {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        #input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        #userInput {
+            flex-grow: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 15px;
+            outline: none;
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #fileInput {
+            background: none;
+            border: none;
+            color: #555;
+            font-size: 0.9em;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #89f7fe, #66a6ff);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 1em;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(102, 166, 255, 0.6);
+        }
+
+        img.message {
+            max-width: 200px;
+            border-radius: 15px;
+            margin: 10px 0;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container"></div>
+
+    <div id="input-area">
+        <input type="file" id="fileInput" accept="image/*">
+        <div id="input-row">
+            <input type="text" id="userInput" placeholder="メッセージを入力...">
+            <button onclick="sendMessage()">送信</button>
+        </div>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const fileInput = document.getElementById('fileInput');
+            const message = input.value.trim();
+            const file = fileInput.files[0];
+    
+            if (!message && !file) {
+                alert("⚠ メッセージか画像を入力してね！");
+                return;
+            }
+    
+            if (message) {
+                addMessage('user', message);
+            }
+            if (file) {
+                addImage('user', URL.createObjectURL(file));
+            }
+    
+            const formData = new FormData();
+            formData.append('message', message);
+            if (file) {
+                formData.append('file', file);
+            }
+    
+            // 作成中メッセージを表示
+            const loadingMsgId = addMessage('ai', '作成中...⏳');
+    
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    body: formData
+                });
+    
+                const data = await response.json();
+                    addMessage('ai', data.reply);
+    
+            input.value = '';
+            fileInput.value = '';
+        }
+    
+        function addMessage(sender, text) {
+            const container = document.getElementById('chat-container');
+            const msg = document.createElement('div');
+            msg.className = `message ${sender}`;
+            msg.innerText = text;
+            container.appendChild(msg);
+            container.scrollTop = container.scrollHeight;
+        }
+    
+        function addImage(sender, src) {
+            const container = document.getElementById('chat-container');
+            const img = document.createElement('img');
+            img.src = src;
+            img.className = `message ${sender}`;
+            container.appendChild(img);
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
+</body>
+</html>
